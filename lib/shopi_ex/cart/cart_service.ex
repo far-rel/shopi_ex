@@ -28,34 +28,24 @@ defmodule ShopiEx.Cart.CartService do
   end
 
   @spec get_state(pid()) :: Cart.t()
-  def get_state(pid) do
-    GenServer.call(pid, :get_state)
-  end
+  def get_state(pid), do: GenServer.call(pid, :get_state)
 
   @spec total_price(pid()) :: Decimal.t()
-  def total_price(pid) do
-    GenServer.call(pid, :total_price)
-  end
+  def total_price(pid), do: GenServer.call(pid, :total_price)
 
   @spec add_item(pid(), AddItem.t()) :: :ok | {:error, atom()}
-  def add_item(pid, %AddItem{} = command) do
-    GenServer.call(pid, command)
-  end
+  def add_item(pid, %AddItem{} = command), do: GenServer.call(pid, command)
 
   @spec remove_item(pid(), RemoveItem.t()) :: :ok | {:error, atom()}
-  def remove_item(pid, %RemoveItem{} = command) do
-    GenServer.call(pid, command)
-  end
+  def remove_item(pid, %RemoveItem{} = command), do: GenServer.call(pid, command)
 
   @spec increase_item_quantity(pid(), IncreaseItemQuantity.t()) :: :ok | {:error, atom()}
-  def increase_item_quantity(pid, %IncreaseItemQuantity{} = command) do
-    GenServer.call(pid, command)
-  end
+  def increase_item_quantity(pid, %IncreaseItemQuantity{} = command),
+    do: GenServer.call(pid, command)
 
   @spec decrease_item_quantity(pid(), DecreaseItemQuantity.t()) :: :ok | {:error, atom()}
-  def decrease_item_quantity(pid, %DecreaseItemQuantity{} = command) do
-    GenServer.call(pid, command)
-  end
+  def decrease_item_quantity(pid, %DecreaseItemQuantity{} = command),
+    do: GenServer.call(pid, command)
 
   # Server callbacks
 
