@@ -17,7 +17,6 @@ defmodule ShopiEx.Cart.CartTest do
   end
 
   test "calculates total price of a cart", %{cart_id: cart_id} do
-    #    Decimal.new(2) * 2
     pid = Cart.get!(cart_id)
 
     Cart.add_item(pid, %Commands.AddItem{
