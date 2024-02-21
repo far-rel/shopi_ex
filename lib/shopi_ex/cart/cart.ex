@@ -78,12 +78,19 @@ defmodule ShopiEx.Cart.Cart do
       |> Enum.find(fn i -> i.item_id == command.item_id end)
       |> case do
         nil ->
-          apply_and_save_event(cart, %ItemAdded{
-            item_id: command.item_id,
-            name: command.name,
-            quantity: command.quantity,
-            price: command.price
-          })
+          (command.quantity > 0)
+          |> case do
+            true ->
+              apply_and_save_event(cart, %ItemAdded{
+                item_id: command.item_id,
+                name: command.name,
+                quantity: command.quantity,
+                price: command.price
+              })
+
+            false ->
+              cart
+          end
 
         _ ->
           cart

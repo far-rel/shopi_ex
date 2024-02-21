@@ -67,6 +67,18 @@ defmodule ShopiEx.Cart.CartTest do
       assert %Cart{id: ^cart_id, items: [%CartItem{item_id: ^item_id}]} = cart
       assert 1 == length(InMemoryEventStore.get_events(:cart, cart_id))
     end
+
+    test "does not add an item when quantity is 0", %{
+      cart_id: cart_id,
+      pid: pid,
+      item_id: item_id,
+      add_item_command: add_item_command
+    } do
+      Cart.add_item(pid, %{add_item_command | quantity: 0})
+      cart = Cart.get_state(pid)
+      assert %Cart{id: ^cart_id, items: []} = cart
+      assert Enum.empty?(InMemoryEventStore.get_events(:cart, cart_id))
+    end
   end
 
   describe "remove item from a cart" do
@@ -257,7 +269,7 @@ defmodule ShopiEx.Cart.CartTest do
       cart_id: cart_id,
       pid: pid,
       add_item_command: add_item_command,
-      increase_quantity_command: increase_quantity_command,
+      increase_quantity_command: increase_quantity_command
     } do
       Cart.add_item(pid, add_item_command)
       Cart.increase_item_quantity(pid, increase_quantity_command)
