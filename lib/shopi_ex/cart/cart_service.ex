@@ -1,4 +1,4 @@
-defmodule ShopiEx.Cart.Cart do
+defmodule ShopiEx.Cart.CartService do
   @moduledoc """
   A module to manage the shopping carts.
   """
@@ -8,7 +8,7 @@ defmodule ShopiEx.Cart.Cart do
 
   use GenServer
 
-  alias ShopiEx.Cart.Cart
+  alias ShopiEx.Cart.CartService
   alias ShopiEx.Cart.CartItem
   alias ShopiEx.Cart.Commands.{AddItem, RemoveItem, IncreaseItemQuantity, DecreaseItemQuantity}
   alias ShopiEx.Cart.Events.{ItemAdded, ItemRemoved, ItemQuantityIncreased, ItemQuantityDecreased}
@@ -214,6 +214,6 @@ defmodule ShopiEx.Cart.Cart do
   end
 
   defp empty_cart(id) do
-    %Cart{id: id, items: []}
+    %CartService{id: id, items: []}
   end
 end
