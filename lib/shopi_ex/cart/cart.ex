@@ -36,6 +36,11 @@ defmodule ShopiEx.Cart.Cart do
     GenServer.call(pid, :get_state)
   end
 
+  @spec total_price(pid()) :: Decimal.t()
+  def total_price(pid) do
+    GenServer.call(pid, :total_price)
+  end
+
   @spec add_item(pid(), AddItem.t()) :: :ok
   def add_item(pid, %AddItem{} = command) do
     GenServer.call(pid, command)
@@ -70,6 +75,16 @@ defmodule ShopiEx.Cart.Cart do
   @impl true
   def handle_call(:get_state, _from, cart) do
     {:reply, cart, cart}
+  end
+
+  def handle_call(:total_price, _from, cart) do
+    total_price =
+      cart.items
+      |> Enum.reduce(0, fn item, acc ->
+        Decimal.add(acc, Decimal.mult(item.quantity, item.price))
+      end)
+
+    {:reply, total_price, cart}
   end
 
   def handle_call(%AddItem{} = command, _from, cart) do

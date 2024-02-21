@@ -16,6 +16,28 @@ defmodule ShopiEx.Cart.CartTest do
     assert %Cart{id: ^cart_id, items: []} = cart
   end
 
+  test "calculates total price of a cart", %{cart_id: cart_id} do
+    #    Decimal.new(2) * 2
+    pid = Cart.get!(cart_id)
+
+    Cart.add_item(pid, %Commands.AddItem{
+      item_id: UUID.uuid4(),
+      name: "item",
+      quantity: 1,
+      price: Decimal.new(1)
+    })
+
+    Cart.add_item(pid, %Commands.AddItem{
+      item_id: UUID.uuid4(),
+      name: "item",
+      quantity: 2,
+      price: Decimal.new(2)
+    })
+
+    total_price = Cart.total_price(pid)
+    assert Decimal.new(5) == total_price
+  end
+
   describe "adding item to a cart" do
     setup do
       cart_id = UUID.uuid4()
