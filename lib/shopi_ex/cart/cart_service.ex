@@ -37,22 +37,22 @@ defmodule ShopiEx.Cart.CartService do
     GenServer.call(pid, :total_price)
   end
 
-  @spec add_item(pid(), AddItem.t()) :: :ok
+  @spec add_item(pid(), AddItem.t()) :: :ok | {:error, atom()}
   def add_item(pid, %AddItem{} = command) do
     GenServer.call(pid, command)
   end
 
-  @spec remove_item(pid(), RemoveItem.t()) :: :ok
+  @spec remove_item(pid(), RemoveItem.t()) :: :ok | {:error, atom()}
   def remove_item(pid, %RemoveItem{} = command) do
     GenServer.call(pid, command)
   end
 
-  @spec increase_item_quantity(pid(), IncreaseItemQuantity.t()) :: :ok
+  @spec increase_item_quantity(pid(), IncreaseItemQuantity.t()) :: :ok | {:error, atom()}
   def increase_item_quantity(pid, %IncreaseItemQuantity{} = command) do
     GenServer.call(pid, command)
   end
 
-  @spec decrease_item_quantity(pid(), DecreaseItemQuantity.t()) :: :ok
+  @spec decrease_item_quantity(pid(), DecreaseItemQuantity.t()) :: :ok | {:error, atom()}
   def decrease_item_quantity(pid, %DecreaseItemQuantity{} = command) do
     GenServer.call(pid, command)
   end
@@ -73,83 +73,73 @@ defmodule ShopiEx.Cart.CartService do
     {:reply, Cart.total_price(cart), cart}
   end
 
+  def handle_call(%AddItem{quantity: quantity}, _from, cart) when quantity <= 0,
+    do: {:reply, {:error, :quantity_below_one}, cart}
+
   def handle_call(%AddItem{} = command, _from, cart) do
-    cart =
-      cart.items
-      |> Enum.find(fn i -> i.item_id == command.item_id end)
-      |> case do
-        nil ->
-          (command.quantity > 0)
-          |> case do
-            true ->
-              apply_and_save_event(cart, %ItemAdded{
-                item_id: command.item_id,
-                name: command.name,
-                quantity: command.quantity,
-                price: command.price
-              })
+    cart
+    |> Cart.item(command.item_id)
+    |> case do
+      nil ->
+        cart =
+          apply_and_save_event(cart, %ItemAdded{
+            item_id: command.item_id,
+            name: command.name,
+            quantity: command.quantity,
+            price: command.price
+          })
 
-            false ->
-              cart
-          end
+        {:reply, :ok, cart}
 
-        _ ->
-          cart
-      end
-
-    {:reply, :ok, cart}
+      _ ->
+        {:reply, {:error, :item_already_in_cart}, cart}
+    end
   end
 
   def handle_call(%RemoveItem{} = command, _from, cart) do
-    cart =
-      cart.items
-      |> Enum.find(fn item -> item.item_id == command.item_id end)
-      |> case do
-        nil ->
-          cart
+    cart
+    |> Cart.item(command.item_id)
+    |> case do
+      nil ->
+        {:reply, {:error, :item_not_in_cart}, cart}
 
-        _ ->
-          apply_and_save_event(cart, %ItemRemoved{item_id: command.item_id})
-      end
-
-    {:reply, :ok, cart}
+      _ ->
+        cart = apply_and_save_event(cart, %ItemRemoved{item_id: command.item_id})
+        {:reply, :ok, cart}
+    end
   end
 
   def handle_call(%IncreaseItemQuantity{} = command, _from, cart) do
-    cart =
-      cart.items
-      |> Enum.find(fn item -> item.item_id == command.item_id end)
-      |> case do
-        nil ->
-          cart
+    cart
+    |> Cart.item(command.item_id)
+    |> case do
+      nil ->
+        {:reply, {:error, :item_not_in_cart}, cart}
 
-        item ->
-          apply_and_save_event(cart, %ItemQuantityIncreased{item_id: item.item_id})
-      end
-
-    {:reply, :ok, cart}
+      item ->
+        cart = apply_and_save_event(cart, %ItemQuantityIncreased{item_id: item.item_id})
+        {:reply, :ok, cart}
+    end
   end
 
   def handle_call(%DecreaseItemQuantity{} = command, _from, cart) do
-    cart =
-      cart.items
-      |> Enum.find(fn item -> item.item_id == command.item_id end)
-      |> case do
-        nil ->
-          cart
+    cart
+    |> Cart.item(command.item_id)
+    |> case do
+      nil ->
+        {:reply, {:error, :item_not_in_cart}, cart}
 
-        item ->
+      item ->
+        event =
           (item.quantity > 1)
           |> case do
-            true ->
-              apply_and_save_event(cart, %ItemQuantityDecreased{item_id: item.item_id})
-
-            false ->
-              apply_and_save_event(cart, %ItemRemoved{item_id: item.item_id})
+            true -> %ItemQuantityDecreased{item_id: item.item_id}
+            false -> %ItemRemoved{item_id: item.item_id}
           end
-      end
 
-    {:reply, :ok, cart}
+        cart = apply_and_save_event(cart, event)
+        {:reply, :ok, cart}
+    end
   end
 
   defp start_link(id) do

@@ -21,6 +21,11 @@ defmodule ShopiEx.Cart.CartTest do
       assert Cart.total_price(cart) == Decimal.new(20)
     end
 
+    test "gets item by id", %{cart: cart} do
+      assert Cart.item(cart, "item_1").item_id == "item_1"
+      assert Cart.item(cart, "item_2") == nil
+    end
+
     test "restores cart from events", %{cart: cart} do
       assert cart.id == "cart_1"
       assert length(cart.items) == 1

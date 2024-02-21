@@ -17,6 +17,11 @@ defmodule ShopiEx.Cart.Cart do
     |> Enum.reduce(0, &Decimal.add/2)
   end
 
+  @spec item(t, binary()) :: CartItem.t() | nil
+  def item(cart, item_id) do
+    Enum.find(cart.items, fn item -> item.item_id == item_id end)
+  end
+
   @spec restore_from_events(binary(), [Event.t()]) :: t
   def restore_from_events(id, events) do
     Enum.reduce(events, empty_cart(id), fn event, cart -> apply_event(cart, event) end)

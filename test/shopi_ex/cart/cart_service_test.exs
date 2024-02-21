@@ -59,7 +59,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       item_id: item_id,
       add_item_command: add_item_command
     } do
-      CartService.add_item(pid, add_item_command)
+      assert :ok == CartService.add_item(pid, add_item_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: [%CartItem{item_id: ^item_id}]} = cart
       %Cart{items: [item]} = cart
@@ -83,7 +83,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       add_item_command: add_item_command
     } do
       CartService.add_item(pid, add_item_command)
-      CartService.add_item(pid, add_item_command)
+      assert {:error, :item_already_in_cart} == CartService.add_item(pid, add_item_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: [%CartItem{item_id: ^item_id}]} = cart
       assert 1 == length(InMemoryEventStore.get_events(:cart, cart_id))
@@ -94,7 +94,9 @@ defmodule ShopiEx.Cart.CartServiceTest do
       pid: pid,
       add_item_command: add_item_command
     } do
-      CartService.add_item(pid, %{add_item_command | quantity: 0})
+      assert {:error, :quantity_below_one} ==
+               CartService.add_item(pid, %{add_item_command | quantity: 0})
+
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       assert Enum.empty?(InMemoryEventStore.get_events(:cart, cart_id))
@@ -130,7 +132,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       remove_item_command: remove_item_command
     } do
       CartService.add_item(pid, add_item_command)
-      CartService.remove_item(pid, remove_item_command)
+      assert :ok == CartService.remove_item(pid, remove_item_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       [%Events.ItemAdded{}, %Events.ItemRemoved{}] = InMemoryEventStore.get_events(:cart, cart_id)
@@ -141,7 +143,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       pid: pid,
       remove_item_command: remove_item_command
     } do
-      CartService.remove_item(pid, remove_item_command)
+      assert {:error, :item_not_in_cart} == CartService.remove_item(pid, remove_item_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       assert Enum.empty?(InMemoryEventStore.get_events(:cart, cart_id))
@@ -179,7 +181,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       increase_quantity_command: increase_quantity_command
     } do
       CartService.add_item(pid, add_item_command)
-      CartService.increase_item_quantity(pid, increase_quantity_command)
+      assert :ok == CartService.increase_item_quantity(pid, increase_quantity_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: [%CartItem{item_id: ^item_id, quantity: 2}]} = cart
 
@@ -192,7 +194,9 @@ defmodule ShopiEx.Cart.CartServiceTest do
       pid: pid,
       increase_quantity_command: increase_quantity_command
     } do
-      CartService.increase_item_quantity(pid, increase_quantity_command)
+      assert {:error, :item_not_in_cart} ==
+               CartService.increase_item_quantity(pid, increase_quantity_command)
+
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       assert Enum.empty?(InMemoryEventStore.get_events(:cart, cart_id))
@@ -230,7 +234,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       decrease_quantity_command: decrease_quantity_command
     } do
       CartService.add_item(pid, add_item_command)
-      CartService.decrease_item_quantity(pid, decrease_quantity_command)
+      assert :ok == CartService.decrease_item_quantity(pid, decrease_quantity_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: [%CartItem{item_id: ^item_id, quantity: 1}]} = cart
 
@@ -245,7 +249,7 @@ defmodule ShopiEx.Cart.CartServiceTest do
       decrease_quantity_command: decrease_quantity_command
     } do
       CartService.add_item(pid, %{add_item_command | quantity: 1})
-      CartService.decrease_item_quantity(pid, decrease_quantity_command)
+      assert :ok == CartService.decrease_item_quantity(pid, decrease_quantity_command)
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       [%Events.ItemAdded{}, %Events.ItemRemoved{}] = InMemoryEventStore.get_events(:cart, cart_id)
@@ -256,7 +260,9 @@ defmodule ShopiEx.Cart.CartServiceTest do
       pid: pid,
       decrease_quantity_command: decrease_quantity_command
     } do
-      CartService.decrease_item_quantity(pid, decrease_quantity_command)
+      assert {:error, :item_not_in_cart} ==
+               CartService.decrease_item_quantity(pid, decrease_quantity_command)
+
       cart = CartService.get_state(pid)
       assert %Cart{id: ^cart_id, items: []} = cart
       assert Enum.empty?(InMemoryEventStore.get_events(:cart, cart_id))
